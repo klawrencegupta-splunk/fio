@@ -1,0 +1,10 @@
+; -- start job file --
+[random-writers]
+ioengine=libaio
+iodepth=16
+rw=randrw
+bssplit=4k/50:8k/:32k/
+direct=1
+size=64m
+numjobs=1
+; -- end job file --
