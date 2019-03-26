@@ -17,7 +17,7 @@ Splunk UF/HF app that runs fio jobs on 30 second intervals for testing. This job
 
 This is a wrapper/app for the fio_splunk_hec.py script & will send to the HEC endpoint defined in bin/fio_wrapper.sh script
 
-*fio_job_builder.sh*
+**fio_job_builder.sh**
 
 A shell script that will build out quick and dirty FIO job files by specifying job type, size & number with CLI args
 
