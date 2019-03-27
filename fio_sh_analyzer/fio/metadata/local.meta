@@ -1,0 +1,21 @@
+[app/ui]
+version = 7.2.3
+modtime = 1549050005.658416000
+
+[app/launcher]
+version = 7.2.3
+modtime = 1549050005.659667000
+
+[inputs/http%3A%2F%2Ffio_script]
+access = read : [ admin ], write : [ admin ]
+export = none
+owner = admin
+version = 7.2.3
+modtime = 1549050129.228873000
+
+[props/fio/EXTRACT-job_sizemb%2Cjob_num%2Cjob_type]
+access = read : [ * ], write : [ admin ]
+export = none
+owner = admin
+version = 7.2.5
+modtime = 1553627506.435334000
