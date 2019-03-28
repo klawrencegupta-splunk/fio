@@ -28,17 +28,17 @@ Example:
 builds
 
 ; -- start job file --
-[splunk-fio-1024m-1j-randrw]
+[splunk-fio-aws_splunk_util-2-1024m-2j-randrw]
 ioengine=libaio
 iodepth=16
 bssplit=4k/50:8k/:32k/
 direct=1
 rw=randrw
 size=1024m
-numjobs=1
+numjobs=2
 ; -- end job file --
 
-The [job name] is important for regex since it provides additional data about job size, number of threads and if it was a randrw job, randwrite or randread type of job that's not provided in the original FIO payload.
+The [job name] is important for regex since it provides additional data about the hostname ($HOSTNAME) that ran the job, the job size in MB, number of threads and if it was a randrw job, randwrite or randread type of job that's not provided in the original FIO payload.
 
 **fio_analyzer_shapp**
 
