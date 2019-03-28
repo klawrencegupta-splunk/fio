@@ -40,12 +40,20 @@ numjobs=1
 
 The [job name] is important for regex since it provides additional data about job size, number of threads and if it was a randrw job, randwrite or randread type of job that's not provided in the original FIO payload.
 
-**fio_analyzer**
+**fio_analyzer_shapp**
 
 FIO Analyzer SH app with FIO Results dashboard. Current Metrics:
-- Read IOPS
-- Write IOPS
-- IO Depth
-- Disk Util % (during testing - all threads)
-- Latency & Bandwidth Stats
-- CPU Utilization 
+
+2 Dashboards available:
+- FIO Results Analyzer - By Job
+- FIO Results Analyzer - By Host
+With the following metrics available:
+
+Job Details
+ - Job Name, Job Type (randrw/randwrite/randread), Job Size (MB), Read IOPS, Trim IOPS, Write IOPS
+
+Disk Utilization % | Computational & Submission Latency -- *highest value will be reported*
+Total IOPS Distribution (RW) by Job Size (MB)
+Total IOPS by # concurrent FIO jobs
+Latency Distribution by % over ms
+Bandwidth Utilization by Fio Job
