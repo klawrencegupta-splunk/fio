@@ -1,0 +1,34 @@
+- hosts:
+    - host
+  vars:
+   fio_py: fio_hec_splunk.py
+   hec_token: ""
+   splunk_host: ""
+   fio_job: ""
+  remote_user: user
+
+  tasks:
+    - copy:
+        src: /opt/ansible/files/{{ fio_job }}
+        dest: /tmp/{{ fio_job }}
+        owner: user
+        group: group
+        mode: 0644
+    - copy:
+        src: /opt/ansible/files/{{ fio_py }}
+        dest: /tmp/{{ fio_py }}
+        owner: user
+        group: user
+        mode: 0644
+    - name: ensure a list of packages installed
+      yum:
+        name: "{{ packages }}"
+      vars:
+        packages:
+        - fio
+      become: yes
+      become_user: root
+    - name: Run all the jobs & post the data to HEC
+      shell: for x in $(ls -1 /tmp/splunk-test*); do /usr/bin/python /tmp/{{ fio_py }} $x {{ hec_token }} {{splunk_host}}; done
+      become: yes
+      become_user: root
