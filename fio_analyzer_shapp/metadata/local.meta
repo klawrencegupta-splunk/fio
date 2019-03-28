@@ -12,10 +12,3 @@ export = none
 owner = admin
 version = 7.2.3
 modtime = 1549050129.228873000
-
-[props/fio/EXTRACT-job_sizemb%2Cjob_num%2Cjob_type]
-access = read : [ * ], write : [ admin ]
-export = none
-owner = admin
-version = 7.2.5
-modtime = 1553627506.435334000
