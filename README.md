@@ -52,8 +52,8 @@ With the following metrics available:
 Job Details
  - Job Name, Job Type (randrw/randwrite/randread), Job Size (MB), Read IOPS, Trim IOPS, Write IOPS
 
-Disk Utilization % | Computational & Submission Latency -- *highest value will be reported*
-Total IOPS Distribution (RW) by Job Size (MB)
-Total IOPS by # concurrent FIO jobs
-Latency Distribution by % over ms
-Bandwidth Utilization by Fio Job
+- Disk Utilization % | Computational & Submission Latency -- *highest value will be reported*
+- Total IOPS Distribution (RW) by Job Size (MB)
+- Total IOPS by # concurrent FIO jobs
+- Latency Distribution by % over ms
+- Bandwidth Utilization by Fio Job
