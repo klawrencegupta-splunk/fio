@@ -1,0 +1,225 @@
+<form>
+  <label>FIO Results Analyzer - By Job</label>
+  <description>A dashboard to help analyze FIO job output (JSON)</description>
+  <fieldset submitButton="false" autoRun="true">
+    <input type="time" token="timer" searchWhenChanged="true">
+      <label>Time Range</label>
+      <default>
+        <earliest>-24h@h</earliest>
+        <latest>now</latest>
+      </default>
+    </input>
+    <input type="multiselect" token="jobname" searchWhenChanged="true">
+      <label>Job Name</label>
+      <fieldForLabel>job</fieldForLabel>
+      <fieldForValue>job</fieldForValue>
+      <search>
+        <query>index=fio | spath path=jobs{}.jobname output=job | fields - _raw | fields job | mvexpand job | spath input=job | fields job | dedup job</query>
+        <earliest>-24h@h</earliest>
+        <latest>now</latest>
+      </search>
+      <delimiter> OR </delimiter>
+    </input>
+  </fieldset>
+  <row>
+    <panel>
+      <title>Job Details</title>
+      <table>
+        <title>Job Name, Job Type (randrw/randwrite/randread), Job Size (MB), Read IOPS, Trim IOPS, Write IOPS</title>
+        <search>
+          <query>index=fio sourcetype=fio $jobname$ | stats avg(*iops*) AS *iops* by job_sizemb, job_num, job_type, jobs{}.jobname, jobs{}.latency_depth | table jobs{}.jobname job_type job_sizemb job_num *iops* jobs{}.latency_depth</query>
+          <earliest>$timer.earliest$</earliest>
+          <latest>$timer.latest$</latest>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Disk Utilization % | Computational &amp; Submission Latency -- *highest value will be reported</title>
+      <single>
+        <title>clat = computational latency | slat = submission latency | disk_util=%of time disk was kept busy during testing</title>
+        <search>
+          <query>index=fio sourcetype=fio $jobname$ | fields jobs{}.*.*lat.mean jobs{}.*.*lat.max jobs{}.*.*lat.min jobs{}.jobname disk_util{}.util | stats max("disk_util{}.util") AS disk_util max(jobs{}.*.*lat.mean) AS *_mean_*lat by jobs{}.jobname | eval read_mean_clat_ms=read_mean_clat/1000 
+| eval write_mean_clat_ms=write_mean_clat/1000 
+| eval trim_mean_clat_ms=trim_mean_clat/1000 
+| eval read_slat_mean_ms=read_mean_slat/1000 
+| eval trim_slat_mean_ms=trim_mean_slat/1000 
+| eval write_slat_mean_ms=write_mean_slat/1000 | fields *_ms disk_util</query>
+          <earliest>$timer.earliest$</earliest>
+          <latest>$timer.latest$</latest>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="height">129</option>
+        <option name="numberPrecision">0.00</option>
+        <option name="rangeColors">["0x53a051","0x0877a6","0xf8be34","0xf1813f","0xdc4e41"]</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="trellis.enabled">1</option>
+        <option name="trellis.size">small</option>
+        <option name="trellis.splitBy">_aggregation</option>
+      </single>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Total IOPS Distribution (RW) by Job Size (MB)</title>
+      <chart>
+        <title>R/W IOPS by size of FIO job</title>
+        <search>
+          <query>index=fio sourcetype=fio $jobname$ | stats avg(jobs{}.read.iops) AS read_iops avg(jobs{}.write.iops) AS write_iops by job_sizemb, jobs{}.jobname</query>
+          <earliest>$timer.earliest$</earliest>
+          <latest>$timer.latest$</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="charting.axisLabelsX.majorLabelStyle.overflowMode">ellipsisNone</option>
+        <option name="charting.axisLabelsX.majorLabelStyle.rotation">0</option>
+        <option name="charting.axisTitleX.visibility">visible</option>
+        <option name="charting.axisTitleY.visibility">visible</option>
+        <option name="charting.axisTitleY2.visibility">visible</option>
+        <option name="charting.axisX.abbreviation">none</option>
+        <option name="charting.axisX.scale">linear</option>
+        <option name="charting.axisY.abbreviation">none</option>
+        <option name="charting.axisY.scale">linear</option>
+        <option name="charting.axisY2.abbreviation">none</option>
+        <option name="charting.axisY2.enabled">0</option>
+        <option name="charting.axisY2.scale">inherit</option>
+        <option name="charting.chart">bar</option>
+        <option name="charting.chart.bubbleMaximumSize">50</option>
+        <option name="charting.chart.bubbleMinimumSize">10</option>
+        <option name="charting.chart.bubbleSizeBy">area</option>
+        <option name="charting.chart.nullValueMode">gaps</option>
+        <option name="charting.chart.showDataLabels">none</option>
+        <option name="charting.chart.sliceCollapsingThreshold">0.01</option>
+        <option name="charting.chart.stackMode">default</option>
+        <option name="charting.chart.style">shiny</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.layout.splitSeries">0</option>
+        <option name="charting.layout.splitSeries.allowIndependentYRanges">0</option>
+        <option name="charting.legend.labelStyle.overflowMode">ellipsisMiddle</option>
+        <option name="charting.legend.mode">standard</option>
+        <option name="charting.legend.placement">right</option>
+        <option name="charting.lineWidth">2</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="trellis.enabled">0</option>
+        <option name="trellis.scales.shared">1</option>
+        <option name="trellis.size">medium</option>
+        <option name="trellis.splitBy">_aggregation</option>
+      </chart>
+    </panel>
+    <panel>
+      <title>Total IOPS by # concurrent FIO jobs</title>
+      <chart>
+        <title>IOPS by number of FIO jobs run during test</title>
+        <search>
+          <query>index=fio sourcetype=fio $jobname$ | stats avg(jobs{}.read.iops) AS read_iops avg(jobs{}.write.iops) AS write_iops by job_num, jobs{}.jobname</query>
+          <earliest>$timer.earliest$</earliest>
+          <latest>$timer.latest$</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="charting.axisLabelsX.majorLabelStyle.overflowMode">ellipsisNone</option>
+        <option name="charting.axisLabelsX.majorLabelStyle.rotation">0</option>
+        <option name="charting.axisTitleX.visibility">collapsed</option>
+        <option name="charting.axisTitleY.visibility">collapsed</option>
+        <option name="charting.axisTitleY2.visibility">collapsed</option>
+        <option name="charting.axisX.abbreviation">none</option>
+        <option name="charting.axisX.scale">linear</option>
+        <option name="charting.axisY.abbreviation">none</option>
+        <option name="charting.axisY.scale">linear</option>
+        <option name="charting.axisY2.abbreviation">none</option>
+        <option name="charting.axisY2.enabled">0</option>
+        <option name="charting.axisY2.scale">inherit</option>
+        <option name="charting.chart">bar</option>
+        <option name="charting.chart.bubbleMaximumSize">50</option>
+        <option name="charting.chart.bubbleMinimumSize">10</option>
+        <option name="charting.chart.bubbleSizeBy">area</option>
+        <option name="charting.chart.nullValueMode">gaps</option>
+        <option name="charting.chart.overlayFields">job_num</option>
+        <option name="charting.chart.showDataLabels">none</option>
+        <option name="charting.chart.sliceCollapsingThreshold">0.01</option>
+        <option name="charting.chart.stackMode">stacked</option>
+        <option name="charting.chart.style">shiny</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.layout.splitSeries">1</option>
+        <option name="charting.layout.splitSeries.allowIndependentYRanges">0</option>
+        <option name="charting.legend.labelStyle.overflowMode">ellipsisMiddle</option>
+        <option name="charting.legend.mode">standard</option>
+        <option name="charting.legend.placement">none</option>
+        <option name="charting.lineWidth">2</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="trellis.enabled">1</option>
+        <option name="trellis.scales.shared">0</option>
+        <option name="trellis.size">medium</option>
+        <option name="trellis.splitBy">_aggregation</option>
+      </chart>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Latency Distribution by % over ms</title>
+      <chart>
+        <search>
+          <query>index=fio sourcetype=fio $jobname$ | chart max(jobs{}.latency_ms*) AS lat_ms* by jobs{}.jobname | sort -lat_ms*</query>
+          <earliest>$timer.earliest$</earliest>
+          <latest>$timer.latest$</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="charting.axisLabelsX.majorLabelStyle.overflowMode">ellipsisNone</option>
+        <option name="charting.axisLabelsX.majorLabelStyle.rotation">0</option>
+        <option name="charting.axisLabelsY.majorUnit">50</option>
+        <option name="charting.axisTitleX.visibility">collapsed</option>
+        <option name="charting.axisTitleY.visibility">collapsed</option>
+        <option name="charting.axisTitleY2.visibility">collapsed</option>
+        <option name="charting.axisX.abbreviation">none</option>
+        <option name="charting.axisX.scale">linear</option>
+        <option name="charting.axisY.abbreviation">none</option>
+        <option name="charting.axisY.maximumNumber">100</option>
+        <option name="charting.axisY.minimumNumber">0</option>
+        <option name="charting.axisY.scale">linear</option>
+        <option name="charting.axisY2.abbreviation">none</option>
+        <option name="charting.axisY2.enabled">0</option>
+        <option name="charting.axisY2.scale">inherit</option>
+        <option name="charting.chart">column</option>
+        <option name="charting.chart.bubbleMaximumSize">50</option>
+        <option name="charting.chart.bubbleMinimumSize">10</option>
+        <option name="charting.chart.bubbleSizeBy">area</option>
+        <option name="charting.chart.nullValueMode">gaps</option>
+        <option name="charting.chart.showDataLabels">minmax</option>
+        <option name="charting.chart.sliceCollapsingThreshold">0.01</option>
+        <option name="charting.chart.stackMode">default</option>
+        <option name="charting.chart.style">shiny</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.layout.splitSeries">0</option>
+        <option name="charting.layout.splitSeries.allowIndependentYRanges">0</option>
+        <option name="charting.legend.labelStyle.overflowMode">ellipsisMiddle</option>
+        <option name="charting.legend.mode">standard</option>
+        <option name="charting.legend.placement">none</option>
+        <option name="charting.lineWidth">2</option>
+        <option name="height">440</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="trellis.enabled">1</option>
+        <option name="trellis.scales.shared">1</option>
+        <option name="trellis.size">small</option>
+        <option name="trellis.splitBy">_aggregation</option>
+      </chart>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Bandwidth Utilization by Fio Job</title>
+      <chart>
+        <title>R/W utilization in MB/s</title>
+        <search>
+          <query>index=fio sourcetype=fio $jobname$ | stats avg("jobs{}.read.bw") AS read_bw_kibs avg(jobs{}.write.bw) AS write_bw_kibs by jobs{}.jobname | eval read_mbs=read_bw_kibs*0.008192 | eval write_mbs=write_bw_kibs*0.008192 | table jobs{}.jobname read_mbs write_mbs</query>
+          <earliest>$timer.earliest$</earliest>
+          <latest>$timer.latest$</latest>
+        </search>
+        <option name="charting.chart">bar</option>
+        <option name="charting.chart.stackMode">stacked</option>
+        <option name="charting.drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+    </panel>
+  </row>
+</form>
