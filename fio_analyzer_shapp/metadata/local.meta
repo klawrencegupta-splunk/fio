@@ -12,3 +12,17 @@ export = none
 owner = admin
 version = 7.2.3
 modtime = 1549050129.228873000
+
+[views/fio_results_analyzer__by_host]
+access = read : [ * ], write : [ admin ]
+export = none
+owner = admin
+version = 7.2.5
+modtime = 1553807941.305372000
+
+[views/fio_results_v2_clone]
+access = read : [ * ], write : [ admin ]
+export = none
+owner = admin
+version = 7.2.5
+modtime = 1553808091.659338000
