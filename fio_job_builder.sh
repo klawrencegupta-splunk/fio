@@ -1,3 +1,6 @@
+#FIO job builder script that provides a formatted job name field for additional Splunk metadata during the analysis process
+# adds hostname, job_sizemb, job_num, job_type
+
 #!/bin/bash
 
 rw=$1
