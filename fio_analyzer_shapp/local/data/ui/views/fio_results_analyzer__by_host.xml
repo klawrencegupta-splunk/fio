@@ -10,7 +10,7 @@
       </default>
     </input>
     <input type="multiselect" token="hostname" searchWhenChanged="true">
-      <label>Job Name</label>
+      <label>Hostname</label>
       <fieldForLabel>hostname</fieldForLabel>
       <fieldForValue>hostname</fieldForValue>
       <search>
@@ -23,43 +23,81 @@
   </fieldset>
   <row>
     <panel>
-      <title>Job Details</title>
+      <title>Job Details - Read/Write IOPS by job name</title>
       <table>
-        <title>Job Name, Job Type (randrw/randwrite/randread), Job Size (MB), Read IOPS, Trim IOPS, Write IOPS</title>
+        <title>Target Read IOPS (100% random reads) based on AWS i3.4xlarge = 825k IOPS | Target Write IOPS based on AWS i3.4xlarge = 360k  IOPS Target| Bandwidth &gt; 10GBps (10240MBps)</title>
         <search>
-          <query>index=fio sourcetype=fio $hostname$ | stats avg(*iops*) AS *iops* by job_sizemb, job_num, job_type, hostname, jobs{}.latency_depth | table hostname job_type job_sizemb job_num *iops* jobs{}.latency_depth</query>
+          <query>index=fio sourcetype=fio $hostname$ | chart avg(jobs{}.*.iops) AS jobs{}.*.iops over jobs{}.jobname by hostname | fields - jobs{}.trim*</query>
           <earliest>$timer.earliest$</earliest>
           <latest>$timer.latest$</latest>
         </search>
         <option name="drilldown">none</option>
-        <option name="refresh.display">progressbar</option>
       </table>
     </panel>
   </row>
   <row>
     <panel>
-      <title>Disk Utilization % | Computational &amp; Submission Latency -- *highest value will be reported</title>
-      <single>
-        <title>clat = computational latency | slat = submission latency | disk_util=%of time disk was kept busy during testing</title>
+      <title>Job Latency percentile reported by jobname</title>
+      <table>
+        <title>JobName | latency_totals - should be close to 100% for completeness | over the latency reported in 2ms | 4ms | 10ms ....etc</title>
         <search>
-          <query>index=fio sourcetype=fio $hostname$ | fields jobs{}.*.*lat.mean jobs{}.*.*lat.max jobs{}.*.*lat.min hostname disk_util{}.util | stats max("disk_util{}.util") AS disk_util max(jobs{}.*.*lat.mean) AS *_mean_*lat by hostname | eval read_mean_clat_ms=read_mean_clat/1000 
-| eval write_mean_clat_ms=write_mean_clat/1000 
-| eval trim_mean_clat_ms=trim_mean_clat/1000 
-| eval read_slat_mean_ms=read_mean_slat/1000 
-| eval trim_slat_mean_ms=trim_mean_slat/1000 
-| eval write_slat_mean_ms=write_mean_slat/1000 | fields *_ms disk_util</query>
+          <query>index=fio sourcetype=fio $hostname$  latency_ms | rex field=_raw "jobs{}.latency_ms\.(?&lt;latency_time&gt;\d{1,4})"| stats values("jobs{}.latency_ms*") AS jobs{}.latency_ms* by jobs{}.jobname  | addtotals fieldname=latency_totals | sort -latency_time | table jobs{}.jobname latency_totals jobs{}.latency_ms*</query>
           <earliest>$timer.earliest$</earliest>
           <latest>$timer.latest$</latest>
         </search>
+        <option name="dataOverlayMode">none</option>
         <option name="drilldown">none</option>
-        <option name="height">129</option>
-        <option name="numberPrecision">0.00</option>
-        <option name="rangeColors">["0x53a051","0x0877a6","0xf8be34","0xf1813f","0xdc4e41"]</option>
+        <option name="refresh.display">progressbar</option>
+      </table>
+    </panel>
+    <panel>
+      <title>Latency Distribution by % over ms aggregated by all jobs over host for total range reported for *instance*</title>
+      <chart>
+        <title>for NVME targets Latency should be &lt; 2ms at maximum</title>
+        <search>
+          <query>index=fio sourcetype=fio $hostname$ | chart max(jobs{}.latency_ms*) AS lat_ms* by hostname | sort -lat_ms*</query>
+          <earliest>$timer.earliest$</earliest>
+          <latest>$timer.latest$</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="charting.axisLabelsX.majorLabelStyle.overflowMode">ellipsisNone</option>
+        <option name="charting.axisLabelsX.majorLabelStyle.rotation">0</option>
+        <option name="charting.axisLabelsY.majorUnit">50</option>
+        <option name="charting.axisTitleX.visibility">collapsed</option>
+        <option name="charting.axisTitleY.visibility">collapsed</option>
+        <option name="charting.axisTitleY2.visibility">collapsed</option>
+        <option name="charting.axisX.abbreviation">none</option>
+        <option name="charting.axisX.scale">linear</option>
+        <option name="charting.axisY.abbreviation">none</option>
+        <option name="charting.axisY.maximumNumber">100</option>
+        <option name="charting.axisY.minimumNumber">0</option>
+        <option name="charting.axisY.scale">linear</option>
+        <option name="charting.axisY2.abbreviation">none</option>
+        <option name="charting.axisY2.enabled">0</option>
+        <option name="charting.axisY2.scale">inherit</option>
+        <option name="charting.chart">bar</option>
+        <option name="charting.chart.bubbleMaximumSize">50</option>
+        <option name="charting.chart.bubbleMinimumSize">10</option>
+        <option name="charting.chart.bubbleSizeBy">area</option>
+        <option name="charting.chart.nullValueMode">gaps</option>
+        <option name="charting.chart.showDataLabels">minmax</option>
+        <option name="charting.chart.sliceCollapsingThreshold">0.01</option>
+        <option name="charting.chart.stackMode">default</option>
+        <option name="charting.chart.style">shiny</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.layout.splitSeries">0</option>
+        <option name="charting.layout.splitSeries.allowIndependentYRanges">0</option>
+        <option name="charting.legend.labelStyle.overflowMode">ellipsisMiddle</option>
+        <option name="charting.legend.mode">standard</option>
+        <option name="charting.legend.placement">none</option>
+        <option name="charting.lineWidth">2</option>
+        <option name="height">440</option>
         <option name="refresh.display">progressbar</option>
         <option name="trellis.enabled">1</option>
+        <option name="trellis.scales.shared">1</option>
         <option name="trellis.size">small</option>
         <option name="trellis.splitBy">_aggregation</option>
-      </single>
+      </chart>
     </panel>
   </row>
   <row>
@@ -68,7 +106,7 @@
       <chart>
         <title>R/W IOPS by size of FIO job</title>
         <search>
-          <query>index=fio sourcetype=fio $hostname$ | stats avg(jobs{}.read.iops) AS read_iops avg(jobs{}.write.iops) AS write_iops by job_sizemb, hostname</query>
+          <query>index=fio sourcetype=fio $hostname$ | stats max(jobs{}.read.iops) AS read_iops max(jobs{}.write.iops) AS write_iops by job_sizemb, hostname</query>
           <earliest>$timer.earliest$</earliest>
           <latest>$timer.latest$</latest>
           <sampleRatio>1</sampleRatio>
@@ -109,11 +147,11 @@
       </chart>
     </panel>
     <panel>
-      <title>Total IOPS by # concurrent FIO jobs</title>
+      <title>Total IOPS by # concurrent FIO jobs (threads)</title>
       <chart>
         <title>IOPS by number of FIO jobs run during test</title>
         <search>
-          <query>index=fio sourcetype=fio $hostname$ | stats avg(jobs{}.read.iops) AS read_iops avg(jobs{}.write.iops) AS write_iops by job_num, hostname</query>
+          <query>index=fio sourcetype=fio $hostname$ | stats max(jobs{}.read.iops) AS read_iops max(jobs{}.write.iops) AS write_iops by job_num, hostname</query>
           <earliest>$timer.earliest$</earliest>
           <latest>$timer.latest$</latest>
           <sampleRatio>1</sampleRatio>
@@ -157,56 +195,6 @@
   </row>
   <row>
     <panel>
-      <title>Latency Distribution by % over ms</title>
-      <chart>
-        <search>
-          <query>index=fio sourcetype=fio $hostname$ | chart max(jobs{}.latency_ms*) AS lat_ms* by hostname | sort -lat_ms*</query>
-          <earliest>$timer.earliest$</earliest>
-          <latest>$timer.latest$</latest>
-          <sampleRatio>1</sampleRatio>
-        </search>
-        <option name="charting.axisLabelsX.majorLabelStyle.overflowMode">ellipsisNone</option>
-        <option name="charting.axisLabelsX.majorLabelStyle.rotation">0</option>
-        <option name="charting.axisLabelsY.majorUnit">50</option>
-        <option name="charting.axisTitleX.visibility">collapsed</option>
-        <option name="charting.axisTitleY.visibility">collapsed</option>
-        <option name="charting.axisTitleY2.visibility">collapsed</option>
-        <option name="charting.axisX.abbreviation">none</option>
-        <option name="charting.axisX.scale">linear</option>
-        <option name="charting.axisY.abbreviation">none</option>
-        <option name="charting.axisY.maximumNumber">100</option>
-        <option name="charting.axisY.minimumNumber">0</option>
-        <option name="charting.axisY.scale">linear</option>
-        <option name="charting.axisY2.abbreviation">none</option>
-        <option name="charting.axisY2.enabled">0</option>
-        <option name="charting.axisY2.scale">inherit</option>
-        <option name="charting.chart">column</option>
-        <option name="charting.chart.bubbleMaximumSize">50</option>
-        <option name="charting.chart.bubbleMinimumSize">10</option>
-        <option name="charting.chart.bubbleSizeBy">area</option>
-        <option name="charting.chart.nullValueMode">gaps</option>
-        <option name="charting.chart.showDataLabels">minmax</option>
-        <option name="charting.chart.sliceCollapsingThreshold">0.01</option>
-        <option name="charting.chart.stackMode">default</option>
-        <option name="charting.chart.style">shiny</option>
-        <option name="charting.drilldown">none</option>
-        <option name="charting.layout.splitSeries">0</option>
-        <option name="charting.layout.splitSeries.allowIndependentYRanges">0</option>
-        <option name="charting.legend.labelStyle.overflowMode">ellipsisMiddle</option>
-        <option name="charting.legend.mode">standard</option>
-        <option name="charting.legend.placement">none</option>
-        <option name="charting.lineWidth">2</option>
-        <option name="height">440</option>
-        <option name="refresh.display">progressbar</option>
-        <option name="trellis.enabled">1</option>
-        <option name="trellis.scales.shared">1</option>
-        <option name="trellis.size">small</option>
-        <option name="trellis.splitBy">_aggregation</option>
-      </chart>
-    </panel>
-  </row>
-  <row>
-    <panel>
       <title>Bandwidth Utilization by Fio Job</title>
       <chart>
         <title>R/W utilization in MB/s</title>
@@ -215,10 +203,17 @@
           <earliest>$timer.earliest$</earliest>
           <latest>$timer.latest$</latest>
         </search>
-        <option name="charting.chart">bar</option>
-        <option name="charting.chart.stackMode">stacked</option>
+        <option name="charting.axisTitleX.visibility">visible</option>
+        <option name="charting.axisTitleY.visibility">visible</option>
+        <option name="charting.axisTitleY2.visibility">visible</option>
+        <option name="charting.chart">column</option>
+        <option name="charting.chart.stackMode">default</option>
         <option name="charting.drilldown">none</option>
+        <option name="charting.legend.placement">right</option>
         <option name="refresh.display">progressbar</option>
+        <option name="trellis.enabled">0</option>
+        <option name="trellis.scales.shared">0</option>
+        <option name="trellis.splitBy">_aggregation</option>
       </chart>
     </panel>
   </row>

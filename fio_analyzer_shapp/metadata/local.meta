@@ -10,19 +10,42 @@ modtime = 1549050005.659667000
 access = read : [ admin ], write : [ admin ]
 export = none
 owner = admin
-version = 7.2.3
-modtime = 1549050129.228873000
+version = 8.1.0.1
+modtime = 1611328717.500772000
 
 [views/fio_results_analyzer__by_host]
 access = read : [ * ], write : [ admin ]
 export = none
 owner = admin
-version = 7.2.5
-modtime = 1553807941.305372000
+version = 8.1.0.1
+modtime = 1612198658.605542000
 
 [views/fio_results_v2_clone]
 access = read : [ * ], write : [ admin ]
 export = none
 owner = admin
-version = 7.2.5
-modtime = 1553808091.659338000
+version = 8.1.0.1
+modtime = 1612201517.937286000
+
+[app/install/install_source_checksum]
+version = 8.1.0.1
+modtime = 1612192232.699272000
+
+[indexes/fio]
+owner = admin
+version = 8.1.0.1
+modtime = 1611328697.938185000
+
+[props/fio/EXTRACT-hostname%2Cjob_sizemb%2Cjob_num]
+access = read : [ * ], write : [ admin ]
+export = none
+owner = admin
+version = 8.1.0.1
+modtime = 1612200730.110001000
+
+[props/fio/EXTRACT-jobname]
+access = read : [ * ], write : [ admin ]
+export = none
+owner = admin
+version = 8.1.0.1
+modtime = 1612201700.933955000

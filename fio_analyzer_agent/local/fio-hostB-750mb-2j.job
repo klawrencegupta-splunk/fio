@@ -1,10 +1,10 @@
 ; -- start job file --
-[splunk-test]
+[splunk-fio-hostB-750mb-2j]
 ioengine=libaio
 iodepth=16
 rw=randrw
 bssplit=4k/50:8k/:32k/
 direct=1
-size=64m
-numjobs=1
+size=750m
+numjobs=2
 ; -- end job file --
